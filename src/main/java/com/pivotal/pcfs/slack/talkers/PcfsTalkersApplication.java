@@ -2,6 +2,7 @@ package com.pivotal.pcfs.slack.talkers;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -20,6 +21,16 @@ public class PcfsTalkersApplication {
 		public void addViewControllers(ViewControllerRegistry registry) {
 			registry.addRedirectViewController("/", "/visualize");
 		}
+	}
+
+	@Configuration
+	public static class PcfsTalkersConfiguration {
+
+		@Bean
+		public SlackService slackService() {
+			return new SlackService();
+		}
+
 	}
 
 }
