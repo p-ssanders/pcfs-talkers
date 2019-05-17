@@ -7,22 +7,29 @@
   <link rel="stylesheet" type="text/css" href="styles.css">
 
   <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-  <script type="text/javascript">
+  <script th:inline="javascript">
     google.charts.load('current', {'packages':['corechart']});
     google.charts.setOnLoadCallback(drawChart);
 
     function drawChart() {
 
-      var data = google.visualization.arrayToDataTable([
-        ['Channel Member', 'Character Count'],
-        ['Sam',     10],
-        ['Adam',    12],
-        ['Dave',    15],
-        ['Nick',    50]
-      ]);
+      var slackChannelParticipantCharacterCount = /*[[${slackChannelParticipantCharacterCount}]]*/;
+
+      slackChannelParticipantCharacterCountAsArrays =
+      Object.keys(slackChannelParticipantCharacterCount).map(function(key) {
+        return [key, slackChannelParticipantCharacterCount[key]];
+      });
+
+      console.log('slackChannelParticipantCharacterCountAsArrays: ', slackChannelParticipantCharacterCountAsArrays);
+
+      var axes = ['Channel Member', 'Character Count'];
+      slackChannelParticipantCharacterCountAsArrays.unshift(axes)
+
+      var data = google.visualization.arrayToDataTable(slackChannelParticipantCharacterCountAsArrays);
 
       var options = {
-        title: '#[[${slackChannelName}]]'
+        title: '#[(${slackChannelName})]',
+        is3D: true
       };
 
       var chart = new google.visualization.PieChart(document.getElementById('piechart'));

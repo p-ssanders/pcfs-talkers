@@ -1,12 +1,13 @@
 package com.pivotal.pcfs.slack.talkers;
 
 import java.util.Collection;
+import java.util.Collections;
 
 public class SlackService {
 
   public Collection<SlackMessage> getChannelMessageHistory(String channelName) {
     // G04NWJQ90
-    return null;
+    return Collections.singletonList(new SlackMessage("sam", "hey there"));
   }
 
   /* history response shape

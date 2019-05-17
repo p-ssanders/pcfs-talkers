@@ -7,7 +7,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -53,7 +55,14 @@ public class TalkersControllerTest {
   @Test
   public void visualize() throws Exception {
     Collection<SlackMessage> slackChannelMessages =
-        List.of(new SlackMessage("some-user", "some-message"));
+        List.of(
+             new SlackMessage("some-user-1", "some-message")
+            ,new SlackMessage("some-user-1", "some-message")
+            ,new SlackMessage("some-user-1", "some-message")
+            ,new SlackMessage("some-user-2", "some-message")
+            ,new SlackMessage("some-user-2", "some-message")
+            ,new SlackMessage("some-user-3", "some-message")
+        );
     when(mockSlackService.getChannelMessageHistory("some-channel-name"))
         .thenReturn(slackChannelMessages);
 
@@ -70,8 +79,13 @@ public class TalkersControllerTest {
         model().attribute("slackChannelName", "some-channel-name")
     )
     .andExpect(
-        model().attribute("slackChannelMessageHistory",
-            List.of(new SlackMessage("some-user", "some-message")))
+        model().attribute("slackChannelParticipantCharacterCount",
+            Map.of(
+                "some-user-1", "some-message".length() * 3,
+                "some-user-2", "some-message".length() * 2,
+                "some-user-3", "some-message".length() * 1
+            )
+        )
     );
   }
 
