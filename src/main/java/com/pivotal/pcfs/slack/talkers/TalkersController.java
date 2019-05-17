@@ -6,7 +6,6 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 public class TalkersController {
@@ -18,24 +17,22 @@ public class TalkersController {
   }
 
   @RequestMapping("/visualize")
-  public String visualize(
-      @RequestParam(value = "channelName", defaultValue = "pcfs-internal") String channelName,
-      Model model
-  ) {
+  public String visualize(Model model) {
     Collection<SlackMessage> slackChannelMessageHistory = slackService
-        .getChannelMessageHistory(channelName);
+        .getChannelMessageHistory("G04NWJQ90");
 
     Map<String, Integer> slackChannelParticipantCharacterCount =
         slackChannelMessageHistory.stream()
-        .collect(
-            Collectors.groupingBy(
-                SlackMessage::getUser,
-                Collectors.reducing(0, (user) -> user.getContent().length(), Integer::sum)
-            )
-        );
+            .collect(
+                Collectors.groupingBy(
+                    SlackMessage::getUser,
+                    Collectors.reducing(0, (user) -> user.getContent().length(), Integer::sum)
+                )
+            );
 
-    model.addAttribute("slackChannelName", channelName);
-    model.addAttribute("slackChannelParticipantCharacterCount", slackChannelParticipantCharacterCount);
+    model.addAttribute("slackChannelName", "pcfs-internal");
+    model.addAttribute("slackChannelParticipantCharacterCount",
+        slackChannelParticipantCharacterCount);
 
     return "visualize";
   }

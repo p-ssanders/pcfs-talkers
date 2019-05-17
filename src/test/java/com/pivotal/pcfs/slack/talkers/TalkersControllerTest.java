@@ -1,13 +1,12 @@
 package com.pivotal.pcfs.slack.talkers;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.junit.Before;
@@ -15,6 +14,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureWebClient;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
@@ -26,6 +26,7 @@ import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 
 @RunWith(SpringRunner.class)
 @WebMvcTest
+@AutoConfigureWebClient
 public class TalkersControllerTest {
 
   @Autowired
@@ -63,11 +64,11 @@ public class TalkersControllerTest {
             ,new SlackMessage("some-user-2", "some-message")
             ,new SlackMessage("some-user-3", "some-message")
         );
-    when(mockSlackService.getChannelMessageHistory("some-channel-name"))
+    when(mockSlackService.getChannelMessageHistory(any()))
         .thenReturn(slackChannelMessages);
 
     this.mockMvc.perform(
-        MockMvcRequestBuilders.get("/visualize").param("channelName", "some-channel-name")
+        MockMvcRequestBuilders.get("/visualize")
     )
     .andExpect(
         status().isOk()
@@ -76,7 +77,7 @@ public class TalkersControllerTest {
         content().contentType("text/html;charset=UTF-8")
     )
     .andExpect(
-        model().attribute("slackChannelName", "some-channel-name")
+        model().attribute("slackChannelName", "pcfs-internal")
     )
     .andExpect(
         model().attribute("slackChannelParticipantCharacterCount",
@@ -87,6 +88,6 @@ public class TalkersControllerTest {
             )
         )
     );
-  }
+}
 
 }

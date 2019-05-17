@@ -1,32 +1,146 @@
 package com.pivotal.pcfs.slack.talkers;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import org.springframework.web.client.RestTemplate;
 
 public class SlackService {
 
-  public Collection<SlackMessage> getChannelMessageHistory(String channelName) {
-    // G04NWJQ90
-    return Collections.singletonList(new SlackMessage("sam", "hey there"));
+  private static final String SLACK_API_ROOT = "https://slack.com/api";
+
+  private final String slackApiToken;
+  private final RestTemplate restTemplate;
+
+  public SlackService(String slackApiToken, RestTemplate restTemplate) {
+    this.slackApiToken = slackApiToken;
+    this.restTemplate = restTemplate;
   }
 
-  /* history response shape
-  {
-    "ok": true,
-    "messages": [],
-    "has_more": true
-  }
-   */
+  public Collection<SlackMessage> getChannelMessageHistory(String channelId) {
+    ChannelMessageHistory channelMessageHistory =
+        restTemplate.getForObject(
+            SLACK_API_ROOT + "/groups.history?token={token}&channel={channel}",
+            ChannelMessageHistory.class, slackApiToken, channelId
+        );
 
-  /* a messagex
-{
-    //"client_msg_id": "eb4ecd7d-25cd-484c-9cb1-e41b8c152114",
-    "type": "message",
-    //"text": "(feel free to DM me)",
-    "user": "U03DZ8T2R",
-    //"ts": "1557962476.069900",
-    //"thread_ts": "1557950340.004100",
-    //"parent_user_id": "U2PH6Q7D5"
-}
- */
+    if(!channelMessageHistory.isOk()) {
+      throw new IllegalStateException("Can't get channel history");
+    }
+
+    List<SlackMessage> slackMessages = channelMessageHistory
+        .getMessages().stream()
+        .map(message -> new SlackMessage(message.getUser(), message.getText()))
+        .collect(Collectors.toList());
+
+    return slackMessages;
+  }
+
+  private static class ChannelMessageHistory {
+
+    private boolean ok;
+    private Collection<Message> messages;
+    private boolean hasMore;
+
+    @JsonCreator
+    public ChannelMessageHistory(
+        @JsonProperty("ok") boolean ok,
+        @JsonProperty("messages") Collection<Message> messages,
+        @JsonProperty("has_more") boolean hasMore
+    ) {
+      this.ok = ok;
+      this.messages = messages;
+      this.hasMore = hasMore;
+    }
+
+    public boolean isOk() {
+      return ok;
+    }
+
+    public Collection<Message> getMessages() {
+      return messages;
+    }
+
+    public boolean isHasMore() {
+      return hasMore;
+    }
+
+    @Override
+    public String toString() {
+      return "ChannelMessageHistory{" +
+          "ok=" + ok +
+          ", messages=" + messages +
+          ", hasMore=" + hasMore +
+          '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (!(o instanceof ChannelMessageHistory)) {
+        return false;
+      }
+      ChannelMessageHistory that = (ChannelMessageHistory) o;
+      return ok == that.ok &&
+          hasMore == that.hasMore &&
+          Objects.equals(messages, that.messages);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(ok, messages, hasMore);
+    }
+  }
+
+  private static class Message {
+
+    private String user;
+    private String text;
+
+    @JsonCreator
+    public Message(@JsonProperty("user") String user, @JsonProperty("text") String text) {
+      this.user = user;
+      this.text = text;
+    }
+
+    public String getUser() {
+      return user;
+    }
+
+    public String getText() {
+      return text;
+    }
+
+    @Override
+    public String toString() {
+      return "Message{" +
+          "user='" + user + '\'' +
+          ", text='" + text + '\'' +
+          '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (!(o instanceof Message)) {
+        return false;
+      }
+      Message message = (Message) o;
+      return user.equals(message.user) &&
+          text.equals(message.text);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(user, text);
+    }
+  }
+
 }
