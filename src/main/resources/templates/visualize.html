@@ -29,7 +29,8 @@
 
       var options = {
         title: '#[(${slackChannelName})]',
-        is3D: true
+        is3D: true,
+        sliceVisibilityThreshold: .03
       };
 
       var chart = new google.visualization.PieChart(document.getElementById('piechart'));

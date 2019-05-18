@@ -39,6 +39,14 @@ public class SlackService {
     return slackMessages;
   }
 
+  public String getUserRealName(String userId) {
+    SlackUserDetails slackUserDetails = restTemplate
+        .getForObject(SLACK_API_ROOT + "/users.info?token={token}&user={userId}",
+            SlackUserDetails.class, slackApiToken, userId);
+
+    return slackUserDetails.getSlackUser().getRealName();
+  }
+
   private static class ChannelMessageHistory {
 
     private boolean ok;
@@ -140,6 +148,91 @@ public class SlackService {
     @Override
     public int hashCode() {
       return Objects.hash(user, text);
+    }
+  }
+
+  private static class SlackUserDetails {
+    private boolean ok;
+    private SlackUser slackUser;
+
+    @JsonCreator
+    public SlackUserDetails(
+        @JsonProperty("ok") boolean ok,
+        @JsonProperty("user") SlackUser slackUser
+    ) {
+      this.ok = ok;
+      this.slackUser = slackUser;
+    }
+
+    public boolean isOk() {
+      return ok;
+    }
+
+    public SlackUser getSlackUser() {
+      return slackUser;
+    }
+
+    @Override
+    public String toString() {
+      return "SlackUserDetails{" +
+          "ok=" + ok +
+          ", slackUser=" + slackUser +
+          '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (!(o instanceof SlackUserDetails)) {
+        return false;
+      }
+      SlackUserDetails that = (SlackUserDetails) o;
+      return ok == that.ok &&
+          Objects.equals(slackUser, that.slackUser);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(ok, slackUser);
+    }
+  }
+
+  private static class SlackUser {
+    private String realName;
+
+    @JsonCreator
+    public SlackUser(@JsonProperty("real_name") String realName) {
+      this.realName = realName;
+    }
+
+    public String getRealName() {
+      return realName;
+    }
+
+    @Override
+    public String toString() {
+      return "SlackUser{" +
+          "realName='" + realName + '\'' +
+          '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (!(o instanceof SlackUser)) {
+        return false;
+      }
+      SlackUser slackUser = (SlackUser) o;
+      return Objects.equals(realName, slackUser.realName);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(realName);
     }
   }
 

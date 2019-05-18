@@ -57,37 +57,41 @@ public class TalkersControllerTest {
   public void visualize() throws Exception {
     Collection<SlackMessage> slackChannelMessages =
         List.of(
-             new SlackMessage("some-user-1", "some-message")
-            ,new SlackMessage("some-user-1", "some-message")
-            ,new SlackMessage("some-user-1", "some-message")
-            ,new SlackMessage("some-user-2", "some-message")
-            ,new SlackMessage("some-user-2", "some-message")
-            ,new SlackMessage("some-user-3", "some-message")
+            new SlackMessage("some-user-1", "some-message")
+            , new SlackMessage("some-user-1", "some-message")
+            , new SlackMessage("some-user-1", "some-message")
+            , new SlackMessage("some-user-2", "some-message")
+            , new SlackMessage("some-user-2", "some-message")
+            , new SlackMessage("some-user-3", "some-message")
         );
     when(mockSlackService.getChannelMessageHistory(any()))
         .thenReturn(slackChannelMessages);
 
+    when(mockSlackService.getUserRealName("some-user-1")).thenReturn("some-user-id-1");
+    when(mockSlackService.getUserRealName("some-user-2")).thenReturn("some-user-id-2");
+    when(mockSlackService.getUserRealName("some-user-3")).thenReturn("some-user-id-3");
+
     this.mockMvc.perform(
         MockMvcRequestBuilders.get("/visualize")
     )
-    .andExpect(
-        status().isOk()
-    )
-    .andExpect(
-        content().contentType("text/html;charset=UTF-8")
-    )
-    .andExpect(
-        model().attribute("slackChannelName", "pcfs-internal")
-    )
-    .andExpect(
-        model().attribute("slackChannelParticipantCharacterCount",
-            Map.of(
-                "some-user-1", "some-message".length() * 3,
-                "some-user-2", "some-message".length() * 2,
-                "some-user-3", "some-message".length() * 1
-            )
+        .andExpect(
+            status().isOk()
         )
-    );
-}
+        .andExpect(
+            content().contentType("text/html;charset=UTF-8")
+        )
+        .andExpect(
+            model().attribute("slackChannelName", "pcfs-internal")
+        )
+        .andExpect(
+            model().attribute("slackChannelParticipantCharacterCount",
+                Map.of(
+                    "some-user-id-1", "some-message".length() * 3,
+                    "some-user-id-2", "some-message".length() * 2,
+                    "some-user-id-3", "some-message".length() * 1
+                )
+            )
+        );
+  }
 
 }

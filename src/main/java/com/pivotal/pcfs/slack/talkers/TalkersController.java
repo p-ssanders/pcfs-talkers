@@ -19,9 +19,9 @@ public class TalkersController {
   @RequestMapping("/visualize")
   public String visualize(Model model) {
     Collection<SlackMessage> slackChannelMessageHistory = slackService
-        .getChannelMessageHistory("G04NWJQ90");
+        .getChannelMessageHistory("G04NWJQ90"); // #pcfs-internal
 
-    Map<String, Integer> slackChannelParticipantCharacterCount =
+    Map<String, Integer> slackChannelParticipantCharacterCountByUserId =
         slackChannelMessageHistory.stream()
             .collect(
                 Collectors.groupingBy(
@@ -30,9 +30,17 @@ public class TalkersController {
                 )
             );
 
+    Map<String, Integer> slackChannelParticipantCharacterCountByUserName = 
+        slackChannelParticipantCharacterCountByUserId
+        .entrySet().stream()
+        .collect(Collectors.toMap(
+            e -> slackService.getUserRealName(e.getKey()),
+            e -> e.getValue()
+        ));
+
     model.addAttribute("slackChannelName", "pcfs-internal");
     model.addAttribute("slackChannelParticipantCharacterCount",
-        slackChannelParticipantCharacterCount);
+        slackChannelParticipantCharacterCountByUserName);
 
     return "visualize";
   }

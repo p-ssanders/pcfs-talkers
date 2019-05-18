@@ -95,4 +95,29 @@ public class SlackServiceTest {
 
     mockRestServiceServer.verify();
   }
+
+  @Test
+  public void getUserRealName() {
+    mockRestServiceServer
+        .expect(requestTo(
+            "https://slack.com/api/users.info?token=some-slack-api-token&user=some-user-id"))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(withSuccess(
+            "{\n"
+                + "    \"ok\": true,\n"
+                + "    \"user\": {\n"
+                + "        \"real_name\": \"Sammy Sand\"\n"
+                + "    }\n"
+                + "}",
+            MediaType.APPLICATION_JSON_UTF8
+        ));
+
+    SlackService slackService = new SlackService("some-slack-api-token", restTemplate);
+
+    String userRealName = slackService.getUserRealName("some-user-id");
+
+    mockRestServiceServer.verify();
+
+    assertThat(userRealName).isEqualTo("Sammy Sand");
+  }
 }
