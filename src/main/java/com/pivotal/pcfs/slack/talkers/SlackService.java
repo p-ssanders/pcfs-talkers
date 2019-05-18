@@ -23,11 +23,11 @@ public class SlackService {
   public Collection<SlackMessage> getChannelMessageHistory(String channelId) {
     ChannelMessageHistory channelMessageHistory =
         restTemplate.getForObject(
-            SLACK_API_ROOT + "/groups.history?token={token}&channel={channel}",
+            SLACK_API_ROOT + "/groups.history?token={token}&channel={channel}&count=1000",
             ChannelMessageHistory.class, slackApiToken, channelId
         );
 
-    if(!channelMessageHistory.isOk()) {
+    if (!channelMessageHistory.isOk()) {
       throw new IllegalStateException("Can't get channel history");
     }
 

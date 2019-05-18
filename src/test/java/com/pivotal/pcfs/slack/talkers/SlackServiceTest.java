@@ -32,7 +32,7 @@ public class SlackServiceTest {
   public void getChannelMessageHistory() {
     mockRestServiceServer
         .expect(requestTo(
-            "https://slack.com/api/groups.history?token=some-slack-api-token&channel=some-channel-id"))
+            "https://slack.com/api/groups.history?token=some-slack-api-token&channel=some-channel-id&count=1000"))
         .andExpect(method(HttpMethod.GET))
         .andRespond(withSuccess(
             "{\"ok\": true,\n"
