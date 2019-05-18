@@ -23,6 +23,7 @@ public class TalkersController {
 
     Map<String, Integer> slackChannelParticipantCharacterCountByUserId =
         slackChannelMessageHistory.stream()
+            .filter(slackMessage -> slackMessage != null && slackMessage.getUser() != null)
             .collect(
                 Collectors.groupingBy(
                     SlackMessage::getUser,

@@ -7,10 +7,12 @@ public class SlackMessage {
 
   private final String user;
   private final String content;
+  private final String timestamp;
 
-  public SlackMessage(@NotNull String user, @NotNull String content) {
+  public SlackMessage(@NotNull String user, @NotNull String content, String timestamp) {
     this.user = user;
     this.content = content;
+    this.timestamp = timestamp;
   }
 
   public String getUser() {
@@ -19,6 +21,10 @@ public class SlackMessage {
 
   public String getContent() {
     return content;
+  }
+
+  public String getTimestamp() {
+    return timestamp;
   }
 
   @Override
@@ -30,13 +36,14 @@ public class SlackMessage {
       return false;
     }
     SlackMessage that = (SlackMessage) o;
-    return user.equals(that.user) &&
-        content.equals(that.content);
+    return Objects.equals(user, that.user) &&
+        Objects.equals(content, that.content) &&
+        Objects.equals(timestamp, that.timestamp);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(user, content);
+    return Objects.hash(user, content, timestamp);
   }
 
   @Override
@@ -44,6 +51,7 @@ public class SlackMessage {
     return "SlackMessage{" +
         "user='" + user + '\'' +
         ", content='" + content + '\'' +
+        ", timestamp='" + timestamp + '\'' +
         '}';
   }
 }

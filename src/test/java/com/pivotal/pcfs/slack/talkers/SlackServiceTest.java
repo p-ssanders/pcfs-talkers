@@ -37,7 +37,7 @@ public class SlackServiceTest {
         .andRespond(withSuccess(
             "{\"ok\": true,\n"
                 + "\"messages\": [{\n"
-                + "            \"client_msg_id\": \"eb4ecd7d-25cd-484c-9cb1-e41b8c152114\",\n"
+                + "            \"client_msg_id\": \"00000000-0000-0000-0000-0000000000000\",\n"
                 + "            \"type\": \"message\",\n"
                 + "            \"text\": \"(feel free to DM me)\",\n"
                 + "            \"user\": \"ABCDEFGHI\",\n"
@@ -46,7 +46,7 @@ public class SlackServiceTest {
                 + "            \"parent_user_id\": \"XXXXXXXXX\"\n"
                 + "        },"
                 + "        {\n"
-                + "            \"client_msg_id\": \"047c36e8-f7f6-4a2c-9942-20600c8a70dd\",\n"
+                + "            \"client_msg_id\": \"00000000-0000-0000-0000-0000000000000\",\n"
                 + "            \"type\": \"message\",\n"
                 + "            \"text\": \"can you help me understand why?\",\n"
                 + "            \"user\": \"123456789\",\n"
@@ -69,16 +69,16 @@ public class SlackServiceTest {
     mockRestServiceServer.verify();
 
     assertThat(channelMessageHistory)
-        .contains(new SlackMessage("ABCDEFGHI", "(feel free to DM me)"));
+        .contains(new SlackMessage("ABCDEFGHI", "(feel free to DM me)", "1557962476.069900"));
     assertThat(channelMessageHistory)
-        .contains(new SlackMessage("123456789", "can you help me understand why?"));
+        .contains(new SlackMessage("123456789", "can you help me understand why?", "1557962417.069700"));
   }
 
   @Test
   public void getChannelMessageHistory_notOk() {
     mockRestServiceServer
         .expect(requestTo(
-            "https://slack.com/api/groups.history?token=some-slack-api-token&channel=some-channel-id"))
+            "https://slack.com/api/groups.history?token=some-slack-api-token&channel=some-channel-id&count=1000"))
         .andExpect(method(HttpMethod.GET))
         .andRespond(withSuccess(
             "{\"ok\": false,\n"

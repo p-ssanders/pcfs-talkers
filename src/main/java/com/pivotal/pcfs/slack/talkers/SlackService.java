@@ -2,6 +2,10 @@ package com.pivotal.pcfs.slack.talkers;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -21,6 +25,52 @@ public class SlackService {
   }
 
   public Collection<SlackMessage> getChannelMessageHistory(String channelId) {
+    List<SlackMessage> slackMessages = new ArrayList<>();
+    String oldestMessageLimitTimestamp = String
+        .valueOf(LocalDate.now().minusMonths(1).toEpochSecond(LocalTime.now(), ZoneOffset.UTC));
+
+    ChannelMessageHistory channelMessageHistory;
+    String lastMessageTimestamp = "";
+    do {
+      channelMessageHistory = doGetChannelMessageHistoryPagination(channelId, lastMessageTimestamp);
+
+      slackMessages.addAll(channelMessageHistory
+          .getMessages().stream()
+          .map(message -> new SlackMessage(message.getUser(), message.getText(),
+              message.getTimestamp()))
+          .collect(Collectors.toList()));
+
+      lastMessageTimestamp = slackMessages.get(slackMessages.size() - 1).getTimestamp();
+      if (lastMessageTimestamp.compareTo(oldestMessageLimitTimestamp) < 0) {
+        break;
+      }
+
+    } while (channelMessageHistory.isHasMore());
+
+    return slackMessages;
+  }
+
+  private ChannelMessageHistory doGetChannelMessageHistoryPagination(String channelId,
+      String lastMessageTimestamp) {
+
+    if (lastMessageTimestamp.equals("")) {
+      return doGetChannelMessageHistory(channelId);
+    }
+
+    ChannelMessageHistory channelMessageHistory = restTemplate.getForObject(
+        SLACK_API_ROOT
+            + "/groups.history?token={token}&channel={channel}&count=1000&latest={timestamp}",
+        ChannelMessageHistory.class, slackApiToken, channelId, lastMessageTimestamp
+    );
+
+    if (!channelMessageHistory.isOk()) {
+      throw new IllegalStateException("Can't get channel history");
+    }
+
+    return channelMessageHistory;
+  }
+
+  private ChannelMessageHistory doGetChannelMessageHistory(String channelId) {
     ChannelMessageHistory channelMessageHistory =
         restTemplate.getForObject(
             SLACK_API_ROOT + "/groups.history?token={token}&channel={channel}&count=1000",
@@ -31,12 +81,7 @@ public class SlackService {
       throw new IllegalStateException("Can't get channel history");
     }
 
-    List<SlackMessage> slackMessages = channelMessageHistory
-        .getMessages().stream()
-        .map(message -> new SlackMessage(message.getUser(), message.getText()))
-        .collect(Collectors.toList());
-
-    return slackMessages;
+    return channelMessageHistory;
   }
 
   public String getUserRealName(String userId) {
@@ -109,11 +154,14 @@ public class SlackService {
 
     private String user;
     private String text;
+    private String timestamp;
 
     @JsonCreator
-    public Message(@JsonProperty("user") String user, @JsonProperty("text") String text) {
+    public Message(@JsonProperty("user") String user, @JsonProperty("text") String text,
+        @JsonProperty("ts") String timestamp) {
       this.user = user;
       this.text = text;
+      this.timestamp = timestamp;
     }
 
     public String getUser() {
@@ -124,11 +172,16 @@ public class SlackService {
       return text;
     }
 
+    public String getTimestamp() {
+      return timestamp;
+    }
+
     @Override
     public String toString() {
       return "Message{" +
           "user='" + user + '\'' +
           ", text='" + text + '\'' +
+          ", timestamp='" + timestamp + '\'' +
           '}';
     }
 
@@ -141,17 +194,19 @@ public class SlackService {
         return false;
       }
       Message message = (Message) o;
-      return user.equals(message.user) &&
-          text.equals(message.text);
+      return Objects.equals(user, message.user) &&
+          Objects.equals(text, message.text) &&
+          Objects.equals(timestamp, message.timestamp);
     }
 
     @Override
     public int hashCode() {
-      return Objects.hash(user, text);
+      return Objects.hash(user, text, timestamp);
     }
   }
 
   private static class SlackUserDetails {
+
     private boolean ok;
     private SlackUser slackUser;
 

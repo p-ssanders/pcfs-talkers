@@ -57,12 +57,12 @@ public class TalkersControllerTest {
   public void visualize() throws Exception {
     Collection<SlackMessage> slackChannelMessages =
         List.of(
-            new SlackMessage("some-user-1", "some-message")
-            , new SlackMessage("some-user-1", "some-message")
-            , new SlackMessage("some-user-1", "some-message")
-            , new SlackMessage("some-user-2", "some-message")
-            , new SlackMessage("some-user-2", "some-message")
-            , new SlackMessage("some-user-3", "some-message")
+            new SlackMessage("some-user-1", "some-message", null)
+            , new SlackMessage("some-user-1", "some-message", null)
+            , new SlackMessage("some-user-1", "some-message", null)
+            , new SlackMessage("some-user-2", "some-message", null)
+            , new SlackMessage("some-user-2", "some-message", null)
+            , new SlackMessage("some-user-3", "some-message", null)
         );
     when(mockSlackService.getChannelMessageHistory(any()))
         .thenReturn(slackChannelMessages);
