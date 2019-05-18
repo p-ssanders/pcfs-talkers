@@ -2,13 +2,13 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
   <title>PCFS Talkers</title>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, , maximum-scale=1">
   <link rel="stylesheet" type="text/css" href="styles.css">
 
   <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
   <script th:inline="javascript">
-    google.charts.load('current', {'packages':['corechart']});
+    google.charts.load('current', {'packages': ['corechart']});
     google.charts.setOnLoadCallback(drawChart);
 
     function drawChart() {
@@ -16,21 +16,27 @@
       var slackChannelParticipantCharacterCount = /*[[${slackChannelParticipantCharacterCount}]]*/;
 
       slackChannelParticipantCharacterCountAsArrays =
-      Object.keys(slackChannelParticipantCharacterCount).map(function(key) {
-        return [key, slackChannelParticipantCharacterCount[key]];
-      });
+          Object.keys(slackChannelParticipantCharacterCount).map(function (key) {
+            return [key, slackChannelParticipantCharacterCount[key]];
+          });
 
-      console.log('slackChannelParticipantCharacterCountAsArrays: ', slackChannelParticipantCharacterCountAsArrays);
+      slackChannelParticipantCharacterCountAsArrays =
+          slackChannelParticipantCharacterCountAsArrays.sort(function(e1, e2) {
+            if(e1[1] > e2[1]) return -1;
+            else if(e1[1] < e2[1]) return 1;
+            else return 0;
+          });
 
       var axes = ['Channel Member', 'Character Count'];
       slackChannelParticipantCharacterCountAsArrays.unshift(axes)
 
-      var data = google.visualization.arrayToDataTable(slackChannelParticipantCharacterCountAsArrays);
+      var data = google.visualization.arrayToDataTable(
+          slackChannelParticipantCharacterCountAsArrays);
 
       var options = {
         title: '#[(${slackChannelName})]',
         is3D: true,
-        sliceVisibilityThreshold: .04,
+        sliceVisibilityThreshold: .03,
         legend: {position: 'bottom'}
       };
 
