@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.web.client.RestTemplate;
 
 public class SlackService {
@@ -84,6 +85,7 @@ public class SlackService {
     return channelMessageHistory;
   }
 
+  @Cacheable("slackUserRealNames")
   public String getUserRealName(String userId) {
     SlackUserDetails slackUserDetails = restTemplate
         .getForObject(SLACK_API_ROOT + "/users.info?token={token}&user={userId}",
