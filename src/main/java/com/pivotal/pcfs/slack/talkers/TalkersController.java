@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @Controller
 public class TalkersController {
 
+  public static final String PCFS_INTERNAL = "G04NWJQ90";
   private final SlackService slackService;
 
   public TalkersController(SlackService slackService) {
@@ -19,7 +20,7 @@ public class TalkersController {
   @RequestMapping("/visualize")
   public String visualize(Model model) {
     Collection<SlackMessage> slackChannelMessageHistory = slackService
-        .getChannelMessageHistory("G04NWJQ90"); // #pcfs-internal
+        .getChannelMessageHistory(PCFS_INTERNAL);
 
     Map<String, Integer> slackChannelParticipantCharacterCountByUserId =
         slackChannelMessageHistory.stream()
