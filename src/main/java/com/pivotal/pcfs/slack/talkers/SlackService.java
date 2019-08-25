@@ -89,6 +89,15 @@ public class SlackService {
         .getForObject(SLACK_API_ROOT + "/users.info?token={token}&user={userId}",
             SlackUserDetails.class, slackApiToken, userId);
 
+    if(!slackUserDetails.isOk())
+      throw new IllegalStateException("Can't get user real name");
+
+    if(slackUserDetails.getSlackUser() == null)
+      throw new IllegalArgumentException(String.format("No user with userId %s", userId));
+
+    if(slackUserDetails.getSlackUser().getRealName() == null)
+      throw new IllegalArgumentException(String.format("No user real name with userId %s", userId));
+
     return slackUserDetails.getSlackUser().getRealName();
   }
 

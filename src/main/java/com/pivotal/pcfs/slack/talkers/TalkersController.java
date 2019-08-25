@@ -38,7 +38,7 @@ public class TalkersController {
     Map<String, Integer> realNameToTotalCharacterCountMap =
         slackChannelMessageHistory.stream()
             .filter(notNull())
-            .filter(userNotNull())
+            .filter(userIdNotNull())
             .collect(groupByRealNameAndTotalCharacterCount());
 
     return realNameToTotalCharacterCountMap;
@@ -48,8 +48,8 @@ public class TalkersController {
     return slackMessage -> slackMessage != null;
   }
 
-  private Predicate<SlackMessage> userNotNull() {
-    return slackMessage -> slackMessage.getUser() != null;
+  private Predicate<SlackMessage> userIdNotNull() {
+    return slackMessage -> slackMessage.getUserId() != null;
   }
 
   private Collector<SlackMessage, ?, Map<String, Integer>> groupByRealNameAndTotalCharacterCount() {
@@ -60,7 +60,14 @@ public class TalkersController {
   }
 
   private String getSlackUserRealName(SlackMessage slackMessage) {
-    return slackService.getUserRealName(slackMessage.getUser());
+    String userRealName;
+    try {
+      userRealName = slackService.getUserRealName(slackMessage.getUserId());
+    }
+    catch (Exception e) {
+      userRealName = "";
+    }
+    return userRealName;
   }
 
   private Function<SlackMessage, Integer> getSlackMessageLength() {

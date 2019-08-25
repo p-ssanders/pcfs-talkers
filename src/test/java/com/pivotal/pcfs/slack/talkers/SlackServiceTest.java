@@ -22,10 +22,12 @@ public class SlackServiceTest {
   private RestTemplate restTemplate = new RestTemplate();
   private MockRestServiceServer mockRestServiceServer = MockRestServiceServer
       .createServer(restTemplate);
+  private SlackService slackService;
 
   @Before
   public void setUp() {
     mockRestServiceServer.reset();
+    slackService = new SlackService("some-slack-api-token", restTemplate);
   }
 
   @Test
@@ -59,12 +61,8 @@ public class SlackServiceTest {
             MediaType.APPLICATION_JSON_UTF8
         ));
 
-    SlackService slackService = new SlackService("some-slack-api-token", restTemplate);
-
-
     Collection<SlackMessage> channelMessageHistory = slackService
         .getChannelMessageHistory("some-channel-id");
-
 
     mockRestServiceServer.verify();
 
@@ -87,9 +85,6 @@ public class SlackServiceTest {
                 + "}",
             MediaType.APPLICATION_JSON_UTF8
         ));
-
-    SlackService slackService = new SlackService("some-slack-api-token", restTemplate);
-
     assertThatExceptionOfType(IllegalStateException.class).isThrownBy(() -> slackService
         .getChannelMessageHistory("some-channel-id"));
 
@@ -111,13 +106,45 @@ public class SlackServiceTest {
                 + "}",
             MediaType.APPLICATION_JSON_UTF8
         ));
-
-    SlackService slackService = new SlackService("some-slack-api-token", restTemplate);
-
     String userRealName = slackService.getUserRealName("some-user-id");
 
     mockRestServiceServer.verify();
 
     assertThat(userRealName).isEqualTo("Sammy Sand");
+  }
+
+  @Test
+  public void getUserRealNameThrowsExceptionNotOk() {
+    mockRestServiceServer
+        .expect(requestTo("https://slack.com/api/users.info?token=some-slack-api-token&user=some-user-id"))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(withSuccess("{\n"
+                + "    \"ok\": false\n"
+                + "}",
+            MediaType.APPLICATION_JSON_UTF8
+        ));
+
+    assertThatExceptionOfType(IllegalStateException.class).isThrownBy(() -> {
+      slackService.getUserRealName("some-user-id");
+    });
+
+    mockRestServiceServer.verify();
+  }
+
+  @Test
+  public void getUserRealNameThrowsExceptionWhenNotFound() {
+    mockRestServiceServer
+        .expect(requestTo("https://slack.com/api/users.info?token=some-slack-api-token&user=some-user-id"))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(withSuccess("{\n"
+                + "    \"ok\": true\n"
+                + "}",
+            MediaType.APPLICATION_JSON_UTF8
+        ));
+
+    assertThatExceptionOfType(IllegalArgumentException.class)
+        .isThrownBy(() -> slackService.getUserRealName("some-user-id"));
+
+    mockRestServiceServer.verify();
   }
 }
