@@ -62,7 +62,7 @@ public class SlackServiceTest {
         ));
 
     Collection<SlackMessage> channelMessageHistory = slackService
-        .getChannelMessageHistory("some-channel-id");
+        .getChannelMessages("some-channel-id");
 
     mockRestServiceServer.verify();
 
@@ -86,7 +86,7 @@ public class SlackServiceTest {
             MediaType.APPLICATION_JSON_UTF8
         ));
     assertThatExceptionOfType(IllegalStateException.class).isThrownBy(() -> slackService
-        .getChannelMessageHistory("some-channel-id"));
+        .getChannelMessages("some-channel-id"));
 
     mockRestServiceServer.verify();
   }

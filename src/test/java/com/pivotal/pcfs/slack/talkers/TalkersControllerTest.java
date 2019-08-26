@@ -64,7 +64,7 @@ public class TalkersControllerTest {
             , new SlackMessage("some-user-2", "some-message", null)
             , new SlackMessage("some-user-3", "some-message", null)
         );
-    when(mockSlackService.getChannelMessageHistory(any()))
+    when(mockSlackService.getChannelMessages(any()))
         .thenReturn(slackChannelMessages);
 
     when(mockSlackService.getUserRealName("some-user-1")).thenReturn("some-user-id-1");

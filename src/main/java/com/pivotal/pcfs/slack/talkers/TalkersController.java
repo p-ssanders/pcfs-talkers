@@ -24,7 +24,7 @@ public class TalkersController {
 
   @RequestMapping("/visualize")
   public String visualize(Model model) {
-    Collection<SlackMessage> slackChannelMessageHistory = slackService.getChannelMessageHistory(PCFS_INTERNAL);
+    Collection<SlackMessage> slackChannelMessageHistory = slackService.getChannelMessages(PCFS_INTERNAL);
 
     Map<String, Integer> realNameToTotalCharacterCount = mapRealNameToTotalCharacterCount(slackChannelMessageHistory);
 

@@ -25,27 +25,6 @@ public class SlackService {
     this.restTemplate = restTemplate;
   }
 
-  public Collection<SlackMessage> getChannelMessageHistory(String channelId) {
-    List<SlackMessage> slackMessages = new ArrayList<>();
-    String oldestMessageTimestamp = calculateTimestampOfOldestMessage();
-
-    ChannelMessageHistory channelMessageHistory;
-    String lastMessageTimestamp = "";
-    do {
-      channelMessageHistory = doGetChannelMessageHistory(channelId, lastMessageTimestamp);
-
-      slackMessages.addAll(mapChannelMessageHistoryToSlackMessages(channelMessageHistory));
-
-      lastMessageTimestamp = slackMessages.get(slackMessages.size() - 1).getTimestamp();
-      if (lastMessageTimestamp.compareTo(oldestMessageTimestamp) < 0) {
-        break;
-      }
-
-    } while (channelMessageHistory.isHasMore());
-
-    return slackMessages;
-  }
-
   @Cacheable("slackUserRealNames")
   public String getUserRealName(String userId) {
     SlackUserDetails slackUserDetails = restTemplate
@@ -65,6 +44,27 @@ public class SlackService {
     }
 
     return slackUserDetails.getSlackUser().getRealName();
+  }
+
+  public Collection<SlackMessage> getChannelMessages(String channelId) {
+    List<SlackMessage> slackMessages = new ArrayList<>();
+    String oldestMessageTimestamp = calculateTimestampOfOldestMessage();
+
+    ChannelMessageHistory channelMessageHistory;
+    String lastMessageTimestamp = "";
+    do {
+      channelMessageHistory = doGetChannelMessageHistory(channelId, lastMessageTimestamp);
+
+      slackMessages.addAll(mapChannelMessageHistoryToSlackMessages(channelMessageHistory));
+
+      lastMessageTimestamp = slackMessages.get(slackMessages.size() - 1).getTimestamp();
+      if (lastMessageTimestamp.compareTo(oldestMessageTimestamp) < 0) {
+        break;
+      }
+
+    } while (channelMessageHistory.isHasMore());
+
+    return slackMessages;
   }
 
   private List<SlackMessage> mapChannelMessageHistoryToSlackMessages(ChannelMessageHistory channelMessageHistory) {
