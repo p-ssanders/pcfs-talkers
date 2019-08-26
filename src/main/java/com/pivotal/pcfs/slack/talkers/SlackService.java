@@ -27,22 +27,17 @@ public class SlackService {
 
   public Collection<SlackMessage> getChannelMessageHistory(String channelId) {
     List<SlackMessage> slackMessages = new ArrayList<>();
-    String oldestMessageLimitTimestamp = String
-        .valueOf(LocalDate.now().minusMonths(1).toEpochSecond(LocalTime.now(), ZoneOffset.UTC));
+    String oldestMessageTimestamp = calculateTimestampOfOldestMessage();
 
     ChannelMessageHistory channelMessageHistory;
     String lastMessageTimestamp = "";
     do {
-      channelMessageHistory = doGetChannelMessageHistoryPagination(channelId, lastMessageTimestamp);
+      channelMessageHistory = doGetChannelMessageHistory(channelId, lastMessageTimestamp);
 
-      slackMessages.addAll(channelMessageHistory
-          .getMessages().stream()
-          .map(message -> new SlackMessage(message.getUser(), message.getText(),
-              message.getTimestamp()))
-          .collect(Collectors.toList()));
+      slackMessages.addAll(mapChannelMessageHistoryToSlackMessages(channelMessageHistory));
 
       lastMessageTimestamp = slackMessages.get(slackMessages.size() - 1).getTimestamp();
-      if (lastMessageTimestamp.compareTo(oldestMessageLimitTimestamp) < 0) {
+      if (lastMessageTimestamp.compareTo(oldestMessageTimestamp) < 0) {
         break;
       }
 
@@ -51,8 +46,41 @@ public class SlackService {
     return slackMessages;
   }
 
-  private ChannelMessageHistory doGetChannelMessageHistoryPagination(String channelId,
-      String lastMessageTimestamp) {
+  @Cacheable("slackUserRealNames")
+  public String getUserRealName(String userId) {
+    SlackUserDetails slackUserDetails = restTemplate
+        .getForObject(SLACK_API_ROOT + "/users.info?token={token}&user={userId}",
+            SlackUserDetails.class, slackApiToken, userId);
+
+    if (!slackUserDetails.isOk()) {
+      throw new IllegalStateException("Can't get user real name");
+    }
+
+    if (slackUserDetails.getSlackUser() == null) {
+      throw new IllegalArgumentException(String.format("No user with userId %s", userId));
+    }
+
+    if (slackUserDetails.getSlackUser().getRealName() == null) {
+      throw new IllegalArgumentException(String.format("No user real name with userId %s", userId));
+    }
+
+    return slackUserDetails.getSlackUser().getRealName();
+  }
+
+  private List<SlackMessage> mapChannelMessageHistoryToSlackMessages(ChannelMessageHistory channelMessageHistory) {
+    return channelMessageHistory
+        .getMessages().stream()
+        .map(message -> new SlackMessage(message.getUser(), message.getText(),
+            message.getTimestamp()))
+        .collect(Collectors.toList());
+  }
+
+  private String calculateTimestampOfOldestMessage() {
+    return String
+        .valueOf(LocalDate.now().minusMonths(1).toEpochSecond(LocalTime.now(), ZoneOffset.UTC));
+  }
+
+  private ChannelMessageHistory doGetChannelMessageHistory(String channelId, String lastMessageTimestamp) {
 
     if (lastMessageTimestamp.equals("")) {
       return doGetChannelMessageHistory(channelId);
@@ -83,24 +111,6 @@ public class SlackService {
     }
 
     return channelMessageHistory;
-  }
-
-  @Cacheable("slackUserRealNames")
-  public String getUserRealName(String userId) {
-    SlackUserDetails slackUserDetails = restTemplate
-        .getForObject(SLACK_API_ROOT + "/users.info?token={token}&user={userId}",
-            SlackUserDetails.class, slackApiToken, userId);
-
-    if(!slackUserDetails.isOk())
-      throw new IllegalStateException("Can't get user real name");
-
-    if(slackUserDetails.getSlackUser() == null)
-      throw new IllegalArgumentException(String.format("No user with userId %s", userId));
-
-    if(slackUserDetails.getSlackUser().getRealName() == null)
-      throw new IllegalArgumentException(String.format("No user real name with userId %s", userId));
-
-    return slackUserDetails.getSlackUser().getRealName();
   }
 
   private static class ChannelMessageHistory {
@@ -266,6 +276,7 @@ public class SlackService {
   }
 
   private static class SlackUser {
+
     private String realName;
 
     @JsonCreator
