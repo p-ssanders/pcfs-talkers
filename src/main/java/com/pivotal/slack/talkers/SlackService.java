@@ -1,4 +1,4 @@
-package com.pivotal.pcfs.slack.talkers;
+package com.pivotal.slack.talkers;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -30,14 +30,17 @@ public class SlackService {
         .getForObject(SLACK_API_ROOT + "/users.info?token={token}&user={userId}",
             SlackUserDetails.class, slackApiToken, userId);
 
-    if (!slackUserDetails.isOk())
+    if (!slackUserDetails.isOk()) {
       throw new IllegalStateException("Can't get user real name");
+    }
 
-    if (slackUserDetails.getSlackUser() == null)
+    if (slackUserDetails.getSlackUser() == null) {
       throw new IllegalArgumentException(String.format("No user with userId %s", userId));
+    }
 
-    if (slackUserDetails.getSlackUser().getRealName() == null)
+    if (slackUserDetails.getSlackUser().getRealName() == null) {
       throw new IllegalArgumentException(String.format("No user real name with userId %s", userId));
+    }
 
     return slackUserDetails.getSlackUser().getRealName();
   }
@@ -53,8 +56,9 @@ public class SlackService {
       String oldestMessageTimestamp = channelMessages.getOldestMessageTimestamp();
 
       // if oldestMessageTimestamp is before oneMonthAgo bc thats how Slack does timestamps
-      if (oldestMessageTimestamp.compareTo(oneMonthAgo) < 0)
+      if (oldestMessageTimestamp.compareTo(oneMonthAgo) < 0) {
         break;
+      }
 
       _channelMessages = getChannelMessagesStartingFrom(channelId, oldestMessageTimestamp);
 
@@ -71,7 +75,7 @@ public class SlackService {
   private ChannelMessages getLatestChannelMessages(String channelId) {
     ChannelMessages channelMessages =
         restTemplate.getForObject(
-            SLACK_API_ROOT + "/groups.history?token={token}&channel={channel}&count=1000",
+            SLACK_API_ROOT + "/conversations.history?token={token}&channel={channel}&count=1000",
             ChannelMessages.class, slackApiToken, channelId
         );
 
@@ -85,7 +89,7 @@ public class SlackService {
   private ChannelMessages getChannelMessagesStartingFrom(String channelId, String startFromTimestamp) {
     ChannelMessages channelMessages = restTemplate.getForObject(
         SLACK_API_ROOT
-            + "/groups.history?token={token}&channel={channel}&count=1000&latest={timestamp}",
+            + "/conversations.history?token={token}&channel={channel}&count=1000&latest={timestamp}",
         ChannelMessages.class, slackApiToken, channelId, startFromTimestamp
     );
 
@@ -94,6 +98,20 @@ public class SlackService {
     }
 
     return channelMessages;
+  }
+
+  public String getChannelName(String channelId) {
+    SlackChannelDetails slackChannelDetails = restTemplate.getForObject(
+        SLACK_API_ROOT
+        + "/conversations.info?token={token}&channel={channel}",
+        SlackChannelDetails.class, slackApiToken, channelId
+    );
+
+    if(!slackChannelDetails.isOk() || slackChannelDetails.getChannel() == null) {
+      throw new IllegalArgumentException("Can't get channel name");
+    }
+
+    return slackChannelDetails.getChannel().getName();
   }
 
   private static class ChannelMessages {
@@ -312,4 +330,63 @@ public class SlackService {
     }
   }
 
+  private static class SlackChannelDetails {
+
+    private boolean ok;
+    private SlackChannel channel;
+
+    @JsonCreator
+    public SlackChannelDetails(
+        @JsonProperty("ok") boolean ok,
+        @JsonProperty("channel") SlackChannel channel) {
+      this.ok = ok;
+      this.channel = channel;
+    }
+
+    public boolean isOk() {
+      return ok;
+    }
+
+    public SlackChannel getChannel() {
+      return channel;
+    }
+
+    @Override
+    public String toString() {
+      return "SlackChannelDetails{" +
+          "ok=" + ok +
+          ", channel=" + channel +
+          '}';
+    }
+  }
+
+  private static class SlackChannel {
+
+    private String id;
+    private String name;
+
+    @JsonCreator
+    public SlackChannel(
+        @JsonProperty("id") String id,
+        @JsonProperty("name") String name) {
+      this.id = id;
+      this.name = name;
+    }
+
+    public String getId() {
+      return id;
+    }
+
+    public String getName() {
+      return name;
+    }
+
+    @Override
+    public String toString() {
+      return "SlackChannel{" +
+          "id='" + id + '\'' +
+          ", name='" + name + '\'' +
+          '}';
+    }
+  }
 }

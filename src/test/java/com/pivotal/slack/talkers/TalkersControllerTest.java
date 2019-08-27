@@ -1,4 +1,4 @@
-package com.pivotal.pcfs.slack.talkers;
+package com.pivotal.slack.talkers;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -64,15 +64,18 @@ public class TalkersControllerTest {
             , new SlackMessage("some-user-2", "some-message", null)
             , new SlackMessage("some-user-3", "some-message", null)
         );
-    when(mockSlackService.getChannelMessages(any()))
-        .thenReturn(slackChannelMessages);
+    when(mockSlackService.getChannelMessages("some-channel-id")).thenReturn(slackChannelMessages);
 
     when(mockSlackService.getUserRealName("some-user-1")).thenReturn("some-user-id-1");
     when(mockSlackService.getUserRealName("some-user-2")).thenReturn("some-user-id-2");
     when(mockSlackService.getUserRealName("some-user-3")).thenReturn("some-user-id-3");
 
+    when(mockSlackService.getChannelName("some-channel-id")).thenReturn("some-channel-name");
+
     this.mockMvc.perform(
-        MockMvcRequestBuilders.get("/visualize")
+        MockMvcRequestBuilders
+            .get("/visualize")
+            .param("channel-id", "some-channel-id")
     )
         .andExpect(
             status().isOk()
@@ -81,7 +84,10 @@ public class TalkersControllerTest {
             content().contentType("text/html;charset=UTF-8")
         )
         .andExpect(
-            model().attribute("slackChannelName", "pcfs-internal")
+            model().attribute("slackChannelId", "some-channel-id")
+        )
+        .andExpect(
+            model().attribute("slackChannelName", "some-channel-name")
         )
         .andExpect(
             model().attribute("slackChannelParticipantCharacterCount",

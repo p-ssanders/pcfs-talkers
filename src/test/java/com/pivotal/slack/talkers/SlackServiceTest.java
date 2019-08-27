@@ -1,4 +1,4 @@
-package com.pivotal.pcfs.slack.talkers;
+package com.pivotal.slack.talkers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -34,7 +34,7 @@ public class SlackServiceTest {
   public void getChannelMessageHistory() {
     mockRestServiceServer
         .expect(requestTo(
-            "https://slack.com/api/groups.history?token=some-slack-api-token&channel=some-channel-id&count=1000"))
+            "https://slack.com/api/conversations.history?token=some-slack-api-token&channel=some-channel-id&count=1000"))
         .andExpect(method(HttpMethod.GET))
         .andRespond(withSuccess(
             "{\"ok\": true,\n"
@@ -76,7 +76,7 @@ public class SlackServiceTest {
   public void getChannelMessageHistory_notOk() {
     mockRestServiceServer
         .expect(requestTo(
-            "https://slack.com/api/groups.history?token=some-slack-api-token&channel=some-channel-id&count=1000"))
+            "https://slack.com/api/conversations.history?token=some-slack-api-token&channel=some-channel-id&count=1000"))
         .andExpect(method(HttpMethod.GET))
         .andRespond(withSuccess(
             "{\"ok\": false,\n"
@@ -144,6 +144,45 @@ public class SlackServiceTest {
 
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(() -> slackService.getUserRealName("some-user-id"));
+
+    mockRestServiceServer.verify();
+  }
+
+  @Test
+  public void getChannelName() {
+    mockRestServiceServer
+        .expect(requestTo("https://slack.com/api/conversations.info?token=some-slack-api-token&channel=some-channel-id"))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(withSuccess("{\n"
+            + "    \"ok\": true,\n"
+            + "    \"channel\": {\n"
+            + "        \"id\": \"some-channel-id\",\n"
+            + "        \"name\": \"some-channel-name\"\n"
+            + "    }\n"
+            + "}", MediaType.APPLICATION_JSON_UTF8));
+
+    String channelName = slackService.getChannelName("some-channel-id");
+
+    mockRestServiceServer.verify();
+
+    assertThat(channelName).isEqualTo("some-channel-name");
+  }
+
+  @Test
+  public void getChannelName_ChannelNotFound() {
+    mockRestServiceServer
+        .expect(requestTo("https://slack.com/api/conversations.info?token=some-slack-api-token&channel=some-channel-id"))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(withSuccess("{\n"
+            + "    \"ok\": false,\n"
+            + "    \"channel\": {\n"
+            + "        \"id\": \"some-channel-id\",\n"
+            + "        \"name\": \"some-channel-name\"\n"
+            + "    }\n"
+            + "}", MediaType.APPLICATION_JSON_UTF8));
+
+    assertThatExceptionOfType(IllegalArgumentException.class)
+        .isThrownBy(() -> slackService.getChannelName("some-channel-id"));
 
     mockRestServiceServer.verify();
   }

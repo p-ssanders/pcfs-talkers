@@ -1,4 +1,4 @@
-package com.pivotal.pcfs.slack.talkers;
+package com.pivotal.slack.talkers;
 
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.reducing;
@@ -11,11 +11,11 @@ import java.util.stream.Collector;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 public class TalkersController {
 
-  public static final String PCFS_INTERNAL = "G04NWJQ90";
   private final SlackService slackService;
 
   public TalkersController(SlackService slackService) {
@@ -23,12 +23,14 @@ public class TalkersController {
   }
 
   @RequestMapping("/visualize")
-  public String visualize(Model model) {
-    Collection<SlackMessage> slackChannelMessageHistory = slackService.getChannelMessages(PCFS_INTERNAL);
+  public String visualize(@RequestParam("channel-id") String channelId, Model model) {
+    String channelName = slackService.getChannelName(channelId);
 
-    Map<String, Integer> realNameToTotalCharacterCount = mapRealNameToTotalCharacterCount(slackChannelMessageHistory);
+    Collection<SlackMessage> slackChannelMessages = slackService.getChannelMessages(channelId);
+    Map<String, Integer> realNameToTotalCharacterCount = mapRealNameToTotalCharacterCount(slackChannelMessages);
 
-    model.addAttribute("slackChannelName", "pcfs-internal");
+    model.addAttribute("slackChannelId", channelId);
+    model.addAttribute("slackChannelName", channelName);
     model.addAttribute("slackChannelParticipantCharacterCount", realNameToTotalCharacterCount);
 
     return "visualize";
@@ -63,8 +65,7 @@ public class TalkersController {
     String userRealName;
     try {
       userRealName = slackService.getUserRealName(slackMessage.getUserId());
-    }
-    catch (Exception e) {
+    } catch (Exception e) {
       userRealName = "";
     }
     return userRealName;

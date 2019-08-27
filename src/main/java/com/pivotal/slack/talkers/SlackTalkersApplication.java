@@ -1,4 +1,4 @@
-package com.pivotal.pcfs.slack.talkers;
+package com.pivotal.slack.talkers;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
@@ -13,10 +13,10 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @SpringBootApplication
 @EnableCaching
-public class PcfsTalkersApplication {
+public class SlackTalkersApplication {
 
   public static void main(String[] args) {
-    SpringApplication.run(PcfsTalkersApplication.class, args);
+    SpringApplication.run(SlackTalkersApplication.class, args);
   }
 
   @Configuration

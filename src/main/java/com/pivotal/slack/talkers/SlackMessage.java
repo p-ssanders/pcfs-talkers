@@ -1,4 +1,4 @@
-package com.pivotal.pcfs.slack.talkers;
+package com.pivotal.slack.talkers;
 
 import java.util.Objects;
 import javax.validation.constraints.NotNull;

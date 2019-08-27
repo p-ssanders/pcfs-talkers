@@ -8,11 +8,11 @@
 		<version>2.1.5.RELEASE</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.pivotal.pcfs.slack</groupId>
-	<artifactId>pcfs-talkers</artifactId>
+	<groupId>com.pivotal.slack</groupId>
+	<artifactId>slack-talkers</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>pcfs-talkers</name>
-	<description>Visualize the talkers in #pcfs-internal</description>
+	<name>slack-talkers</name>
+	<description>Visualize the talkers in a given Slack channel</description>
 
 	<properties>
 		<java.version>11</java.version>

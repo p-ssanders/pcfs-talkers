@@ -1,4 +1,4 @@
-package com.pivotal.pcfs.slack.talkers;
+package com.pivotal.slack.talkers;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -14,7 +14,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 @RunWith(SpringRunner.class)
 @WebMvcTest
 @AutoConfigureWebClient
-public class PcfsTalkersApplicationTests {
+public class SlackTalkersApplicationTests {
 
 	@Autowired
 	private MockMvc mockMvc;
