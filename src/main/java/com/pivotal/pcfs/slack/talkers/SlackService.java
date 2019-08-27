@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -31,98 +30,82 @@ public class SlackService {
         .getForObject(SLACK_API_ROOT + "/users.info?token={token}&user={userId}",
             SlackUserDetails.class, slackApiToken, userId);
 
-    if (!slackUserDetails.isOk()) {
+    if (!slackUserDetails.isOk())
       throw new IllegalStateException("Can't get user real name");
-    }
 
-    if (slackUserDetails.getSlackUser() == null) {
+    if (slackUserDetails.getSlackUser() == null)
       throw new IllegalArgumentException(String.format("No user with userId %s", userId));
-    }
 
-    if (slackUserDetails.getSlackUser().getRealName() == null) {
+    if (slackUserDetails.getSlackUser().getRealName() == null)
       throw new IllegalArgumentException(String.format("No user real name with userId %s", userId));
-    }
 
     return slackUserDetails.getSlackUser().getRealName();
   }
 
   public Collection<SlackMessage> getChannelMessages(String channelId) {
-    List<SlackMessage> slackMessages = new ArrayList<>();
-    String oldestMessageTimestamp = calculateTimestampOfOldestMessage();
+    String oneMonthAgo = oneMonthAgo();
 
-    ChannelMessageHistory channelMessageHistory;
-    String lastMessageTimestamp = "";
-    do {
-      channelMessageHistory = doGetChannelMessageHistory(channelId, lastMessageTimestamp);
+    ChannelMessages channelMessages = getLatestChannelMessages(channelId);
 
-      slackMessages.addAll(mapChannelMessageHistoryToSlackMessages(channelMessageHistory));
+    ChannelMessages _channelMessages = channelMessages;
+    while (_channelMessages.isHasMore()) {
 
-      lastMessageTimestamp = slackMessages.get(slackMessages.size() - 1).getTimestamp();
-      if (lastMessageTimestamp.compareTo(oldestMessageTimestamp) < 0) {
+      String oldestMessageTimestamp = channelMessages.getOldestMessageTimestamp();
+
+      // if oldestMessageTimestamp is before oneMonthAgo bc thats how Slack does timestamps
+      if (oldestMessageTimestamp.compareTo(oneMonthAgo) < 0)
         break;
-      }
 
-    } while (channelMessageHistory.isHasMore());
+      _channelMessages = getChannelMessagesStartingFrom(channelId, oldestMessageTimestamp);
 
-    return slackMessages;
-  }
-
-  private List<SlackMessage> mapChannelMessageHistoryToSlackMessages(ChannelMessageHistory channelMessageHistory) {
-    return channelMessageHistory
-        .getMessages().stream()
-        .map(message -> new SlackMessage(message.getUser(), message.getText(),
-            message.getTimestamp()))
-        .collect(Collectors.toList());
-  }
-
-  private String calculateTimestampOfOldestMessage() {
-    return String
-        .valueOf(LocalDate.now().minusMonths(1).toEpochSecond(LocalTime.now(), ZoneOffset.UTC));
-  }
-
-  private ChannelMessageHistory doGetChannelMessageHistory(String channelId, String lastMessageTimestamp) {
-
-    if (lastMessageTimestamp.equals("")) {
-      return doGetChannelMessageHistory(channelId);
+      channelMessages.addAll(_channelMessages);
     }
 
-    ChannelMessageHistory channelMessageHistory = restTemplate.getForObject(
-        SLACK_API_ROOT
-            + "/groups.history?token={token}&channel={channel}&count=1000&latest={timestamp}",
-        ChannelMessageHistory.class, slackApiToken, channelId, lastMessageTimestamp
-    );
-
-    if (!channelMessageHistory.isOk()) {
-      throw new IllegalStateException("Can't get channel history");
-    }
-
-    return channelMessageHistory;
+    return channelMessages.asSlackMessages();
   }
 
-  private ChannelMessageHistory doGetChannelMessageHistory(String channelId) {
-    ChannelMessageHistory channelMessageHistory =
+  private static String oneMonthAgo() {
+    return String.valueOf(LocalDate.now().minusMonths(1).toEpochSecond(LocalTime.now(), ZoneOffset.UTC));
+  }
+
+  private ChannelMessages getLatestChannelMessages(String channelId) {
+    ChannelMessages channelMessages =
         restTemplate.getForObject(
             SLACK_API_ROOT + "/groups.history?token={token}&channel={channel}&count=1000",
-            ChannelMessageHistory.class, slackApiToken, channelId
+            ChannelMessages.class, slackApiToken, channelId
         );
 
-    if (!channelMessageHistory.isOk()) {
+    if (!channelMessages.isOk()) {
       throw new IllegalStateException("Can't get channel history");
     }
 
-    return channelMessageHistory;
+    return channelMessages;
   }
 
-  private static class ChannelMessageHistory {
+  private ChannelMessages getChannelMessagesStartingFrom(String channelId, String startFromTimestamp) {
+    ChannelMessages channelMessages = restTemplate.getForObject(
+        SLACK_API_ROOT
+            + "/groups.history?token={token}&channel={channel}&count=1000&latest={timestamp}",
+        ChannelMessages.class, slackApiToken, channelId, startFromTimestamp
+    );
+
+    if (!channelMessages.isOk()) {
+      throw new IllegalStateException("Can't get channel history");
+    }
+
+    return channelMessages;
+  }
+
+  private static class ChannelMessages {
 
     private boolean ok;
-    private Collection<Message> messages;
+    private List<Message> messages;
     private boolean hasMore;
 
     @JsonCreator
-    public ChannelMessageHistory(
+    public ChannelMessages(
         @JsonProperty("ok") boolean ok,
-        @JsonProperty("messages") Collection<Message> messages,
+        @JsonProperty("messages") List<Message> messages,
         @JsonProperty("has_more") boolean hasMore
     ) {
       this.ok = ok;
@@ -134,7 +117,7 @@ public class SlackService {
       return ok;
     }
 
-    public Collection<Message> getMessages() {
+    public List<Message> getMessages() {
       return messages;
     }
 
@@ -142,9 +125,17 @@ public class SlackService {
       return hasMore;
     }
 
+    public void addAll(ChannelMessages channelMessages) {
+      this.messages.addAll(channelMessages.getMessages());
+    }
+
+    public String getOldestMessageTimestamp() {
+      return this.getMessages().get(this.getMessages().size() - 1).getTimestamp();
+    }
+
     @Override
     public String toString() {
-      return "ChannelMessageHistory{" +
+      return "ChannelMessages{" +
           "ok=" + ok +
           ", messages=" + messages +
           ", hasMore=" + hasMore +
@@ -156,10 +147,10 @@ public class SlackService {
       if (this == o) {
         return true;
       }
-      if (!(o instanceof ChannelMessageHistory)) {
+      if (!(o instanceof ChannelMessages)) {
         return false;
       }
-      ChannelMessageHistory that = (ChannelMessageHistory) o;
+      ChannelMessages that = (ChannelMessages) o;
       return ok == that.ok &&
           hasMore == that.hasMore &&
           Objects.equals(messages, that.messages);
@@ -168,6 +159,14 @@ public class SlackService {
     @Override
     public int hashCode() {
       return Objects.hash(ok, messages, hasMore);
+    }
+
+    public Collection<SlackMessage> asSlackMessages() {
+      return this
+          .getMessages().stream()
+          .map(message -> new SlackMessage(message.getUser(), message.getText(),
+              message.getTimestamp()))
+          .collect(Collectors.toList());
     }
   }
 
