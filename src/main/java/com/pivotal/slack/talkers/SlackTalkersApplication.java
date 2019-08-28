@@ -20,15 +20,6 @@ public class SlackTalkersApplication {
   }
 
   @Configuration
-  public static class PcfsTalkersApplicationMvcConfiguration implements WebMvcConfigurer {
-
-    @Override
-    public void addViewControllers(ViewControllerRegistry registry) {
-      registry.addRedirectViewController("/", "/visualize");
-    }
-  }
-
-  @Configuration
   public static class PcfsTalkersConfiguration {
 
     @Bean

@@ -22,7 +22,7 @@ public class TalkersController {
     this.slackService = slackService;
   }
 
-  @RequestMapping("/visualize")
+  @RequestMapping("/")
   public String visualize(@RequestParam("channel-id") String channelId, Model model) {
     String channelName = slackService.getChannelName(channelId);
 

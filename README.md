@@ -16,7 +16,7 @@ SLACK_API_TOKEN=<YOUR SLACK API TOKEN> ./mvnw spring-boot:run
 ### Execute
 
 ```http request
-GET /visualize?channel-id=<YOUR CHANNEL ID>
+GET /?channel-id=<YOUR CHANNEL ID>
 ```
 
 ### Tools

@@ -74,7 +74,7 @@ public class TalkersControllerTest {
 
     this.mockMvc.perform(
         MockMvcRequestBuilders
-            .get("/visualize")
+            .get("/")
             .param("channel-id", "some-channel-id")
     )
         .andExpect(
