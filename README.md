@@ -5,12 +5,19 @@ in a pie chart by total characters in their messages over the last month.
 
 ### Build
 ```bash
-./mvnw clean install
+./mvnw clean install [dockerfile:build]
 ```
 
 ### Run
 ```
 SLACK_API_TOKEN=<YOUR SLACK API TOKEN> ./mvnw spring-boot:run
+```
+
+or
+
+```
+kubectl create secret generic slack-api-token --from-literal=SLACK_API_TOKEN=<YOUR SLACK API TOKEN>
+kubectl apply -f k8s-manifest.yml
 ```
 
 ### Execute
