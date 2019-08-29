@@ -1,0 +1,78 @@
+resources:
+- name: repository
+  type: git
+  source:
+    uri: git@github.com:p-ssanders/slack-talkers.git
+    branch: master
+    private_key: ((git-deploy-key.private_key))
+
+jobs:
+- name: test
+  plan:
+  - get: repository
+    trigger: true
+  - task: test
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: openjdk
+          tag: 11-jdk-slim
+      inputs:
+      - name: repository
+      run:
+        path: bash
+        args:
+        - "-c"
+        - |
+          set -eux
+          cd repository
+          ./mvnw test
+
+- name: build
+  plan:
+    - get: repository
+      passed:
+      - test
+      trigger: true
+    - task: package
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: openjdk
+            tag: 11-jdk-slim
+        inputs:
+        - name: repository
+        run:
+          path: bash
+          args:
+            - "-c"
+            - |
+              set -eux
+              cd repository
+              ./mvnw -DskipTests package
+        outputs:
+          - name: jar
+          - path: repository/target/dependency
+
+    - task: build-docker-image
+      config:
+        platform: linux
+        image_resource:
+          type: docker_image
+          source:
+            repository:
+            tag:
+        inputs:
+          - name: jar
+        run:
+          path: bash
+          args:
+            - "-c"
+            - |
+              set -eux
+              cd jar
+              ls

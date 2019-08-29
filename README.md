@@ -5,7 +5,7 @@ in a pie chart by total characters in their messages over the last month.
 
 ### Build
 ```bash
-./mvnw clean install [dockerfile:build]
+./mvnw clean install
 ```
 
 ### Run
@@ -25,6 +25,18 @@ kubectl apply -f k8s-manifest.yml
 ```http request
 GET /?channel-id=<YOUR CHANNEL ID>
 ```
+
+### Concourse
+
+  * Setup Credhub secrets
+  ```
+  credhub set -n /concourse/main/slack-talkers/git-deploy-key -t ssh --private "$(cat deploy-keys/id_rsa)" --public "$(cat deploy-keys/id_rsa.pub)"
+  ```
+
+  * Set the pipeline
+  ```
+  fly -t sam-ci set-pipeline -p slack-talkers -c ci/pipeline.yml
+  ```
 
 ### Tools
 *   [Spring Boot](https://spring.io/projects/spring-boot)

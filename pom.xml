@@ -77,15 +77,6 @@
 				<groupId>com.spotify</groupId>
 				<artifactId>dockerfile-maven-plugin</artifactId>
 				<version>${dockerfile-maven-plugin.version}</version>
-				<executions>
-					<execution>
-						<id>default</id>
-						<goals>
-							<goal>build</goal>
-<!--							<goal>push</goal> TODO how to authenticate?-->
-						</goals>
-					</execution>
-				</executions>
 				<configuration>
 					<verbose>true</verbose>
 					<repository>${docker.image.prefix}/${project.artifactId}</repository>
