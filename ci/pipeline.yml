@@ -1,15 +1,22 @@
 resources:
-- name: repository
+- name: slack-talkers-repository
   type: git
   source:
     uri: git@github.com:p-ssanders/slack-talkers.git
     branch: master
     private_key: ((git-deploy-key.private_key))
 
+- name: slack-talkers-docker-image
+  type: docker-image
+  source:
+    repository: ssanders0/slack-talkers
+    username: ssanders0
+    password: ((dockerhub-password))
+
 jobs:
 - name: test
   plan:
-  - get: repository
+  - get: slack-talkers-repository
     trigger: true
   - task: test
     config:
@@ -20,19 +27,19 @@ jobs:
           repository: openjdk
           tag: 11-jdk-slim
       inputs:
-      - name: repository
+      - name: slack-talkers-repository
       run:
         path: bash
         args:
         - "-c"
         - |
           set -eux
-          cd repository
+          cd slack-talkers-repository
           ./mvnw test
 
 - name: build
   plan:
-    - get: repository
+    - get: slack-talkers-repository
       passed:
       - test
       trigger: true
@@ -45,34 +52,19 @@ jobs:
             repository: openjdk
             tag: 11-jdk-slim
         inputs:
-        - name: repository
-        run:
-          path: bash
-          args:
-            - "-c"
-            - |
-              set -eux
-              cd repository
-              ./mvnw -DskipTests package
+        - name: slack-talkers-repository
         outputs:
-          - name: jar
-          - path: repository/target/dependency
-
-    - task: build-docker-image
-      config:
-        platform: linux
-        image_resource:
-          type: docker_image
-          source:
-            repository:
-            tag:
-        inputs:
-          - name: jar
+        - name: workspace
         run:
           path: bash
           args:
-            - "-c"
-            - |
-              set -eux
-              cd jar
-              ls
+          - "-c"
+          - |
+            set -eux
+            cd slack-talkers-repository
+            ./mvnw -DskipTests package
+            cp -r * ../workspace
+            ls ../workspace
+    - put: slack-talkers-docker-image
+      params:
+        build: workspace
