@@ -13,6 +13,17 @@ resources:
     username: ssanders0
     password: ((dockerhub-password))
 
+- name: docker-tag
+  type: semver
+  source:
+    driver: git
+    initial_version: 0.0.1
+    uri: git@github.com:p-ssanders/slack-talkers.git
+    branch: master
+    private_key: ((git-deploy-key.private_key))
+    file: docker-tag
+
+
 jobs:
 - name: test
   plan:
@@ -43,6 +54,9 @@ jobs:
       passed:
       - test
       trigger: true
+    - get: docker-tag
+      params:
+        bump: minor
     - task: package
       config:
         platform: linux
@@ -64,7 +78,8 @@ jobs:
             cd slack-talkers-repository
             ./mvnw -DskipTests package
             cp -r * ../workspace
-            ls ../workspace
+    - put: docker-image-version
     - put: slack-talkers-docker-image
       params:
         build: workspace
+        tag_file: slack-talkers-repository/docker-tag
