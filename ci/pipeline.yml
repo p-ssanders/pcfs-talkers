@@ -1,12 +1,12 @@
 resources:
-- name: slack-talkers-repository
+- name: git-repository
   type: git
   source:
     uri: git@github.com:p-ssanders/slack-talkers.git
     branch: master
     private_key: ((git-deploy-key.private_key))
 
-- name: slack-talkers-docker-image
+- name: docker-image
   type: docker-image
   source:
     repository: ssanders0/slack-talkers
@@ -21,13 +21,13 @@ resources:
     uri: git@github.com:p-ssanders/slack-talkers.git
     branch: master
     private_key: ((git-deploy-key.private_key))
-    file: docker-tag
+    file: Dockertag
 
 
 jobs:
 - name: test
   plan:
-  - get: slack-talkers-repository
+  - get: git-repository
     trigger: true
   - task: test
     config:
@@ -38,25 +38,25 @@ jobs:
           repository: openjdk
           tag: 11-jdk-slim
       inputs:
-      - name: slack-talkers-repository
+      - name: git-repository
       run:
         path: bash
         args:
         - "-c"
         - |
           set -eux
-          cd slack-talkers-repository
+          cd git-repository
           ./mvnw test
 
 - name: build
   plan:
-    - get: slack-talkers-repository
+    - get: git-repository
       passed:
       - test
       trigger: true
     - get: docker-tag
       params:
-        bump: minor
+        bump: patch
     - task: package
       config:
         platform: linux
@@ -66,7 +66,7 @@ jobs:
             repository: openjdk
             tag: 11-jdk-slim
         inputs:
-        - name: slack-talkers-repository
+        - name: git-repository
         outputs:
         - name: workspace
         run:
@@ -75,11 +75,13 @@ jobs:
           - "-c"
           - |
             set -eux
-            cd slack-talkers-repository
+            cd git-repository
             ./mvnw -DskipTests package
             cp -r * ../workspace
-    - put: docker-image-version
-    - put: slack-talkers-docker-image
+    - put: docker-tag
+      params:
+        file: docker-tag/number
+    - put: docker-image
       params:
         build: workspace
-        tag_file: slack-talkers-repository/docker-tag
+        tag_file: workspace/Dockertag
