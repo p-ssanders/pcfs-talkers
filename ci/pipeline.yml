@@ -5,6 +5,17 @@ resources:
     uri: git@github.com:p-ssanders/slack-talkers.git
     branch: master
     private_key: ((git-deploy-key.private_key))
+    ignore_paths:
+    - Dockertag
+
+- name: docker-tag
+  type: semver
+  source:
+    driver: git
+    uri: git@github.com:p-ssanders/slack-talkers.git
+    branch: master
+    private_key: ((git-deploy-key.private_key))
+    file: Dockertag
 
 - name: docker-image
   type: docker-image
@@ -12,17 +23,6 @@ resources:
     repository: ssanders0/slack-talkers
     username: ssanders0
     password: ((dockerhub-password))
-
-- name: docker-tag
-  type: semver
-  source:
-    driver: git
-    initial_version: 0.0.1
-    uri: git@github.com:p-ssanders/slack-talkers.git
-    branch: master
-    private_key: ((git-deploy-key.private_key))
-    file: Dockertag
-
 
 jobs:
 - name: test
@@ -47,41 +47,47 @@ jobs:
           set -eux
           cd git-repository
           ./mvnw test
+  - put: docker-tag
+    params:
+      bump: patch
 
 - name: build
   plan:
-    - get: git-repository
-      passed:
-      - test
-      trigger: true
-    - get: docker-tag
-      params:
-        bump: patch
-    - task: package
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source:
-            repository: openjdk
-            tag: 11-jdk-slim
-        inputs:
-        - name: git-repository
-        outputs:
-        - name: workspace
-        run:
-          path: bash
-          args:
-          - "-c"
-          - |
-            set -eux
-            cd git-repository
-            ./mvnw -DskipTests package
-            cp -r * ../workspace
-    - put: docker-tag
-      params:
-        file: docker-tag/number
-    - put: docker-image
-      params:
-        build: workspace
-        tag_file: workspace/Dockertag
+  - get: git-repository
+    passed:
+    - test
+  - get: docker-tag
+    trigger: true
+    passed:
+    - test
+  - task: package
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: openjdk
+          tag: 11-jdk-slim
+      inputs:
+      - name: git-repository
+      - name: docker-tag
+      outputs:
+      - name: workspace
+      run:
+        path: bash
+        args:
+        - "-c"
+        - |
+          set -eux
+          cd git-repository
+          ./mvnw -DskipTests package
+          cd ..
+          cp -r git-repository/* workspace/
+
+          cat docker-tag/number
+
+          cat docker-tag/number > workspace/Dockertag
+  - put: docker-image
+    params:
+      build: workspace
+      tag_file: workspace/Dockertag

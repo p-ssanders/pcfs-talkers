@@ -39,7 +39,7 @@ spec:
     spec:
       containers:
       - name: slack-talkers
-        image: ssanders0/slack-talkers
+        image: ssanders0/slack-talkers:0.0.1
         imagePullPolicy: Always
         env:
         - name: SLACK_API_TOKEN
