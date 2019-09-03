@@ -17,8 +17,9 @@ messages over the last month.
 
   * Kubernetes
     ```
+    kubectl create secret docker-registry regcred --docker-server=<your-registry-server> --docker-username=<your-name> --docker-password=<your-pword> --docker-email=<your-email>
     kubectl create secret generic slack-api-token --from-literal=SLACK_API_TOKEN=<YOUR SLACK API TOKEN>
-    sed "s/dockertag/$(cat Dockertag)/g" k8s-manifest.yml > k8s-manifest.yml
+    sed "s/dockertag/$(cat Dockertag)/g" k8s-manifest.yml | kubectl apply -f -
     kubectl apply -f k8s-manifest.yml
     ```
 

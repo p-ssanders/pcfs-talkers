@@ -37,6 +37,8 @@ spec:
       labels:
         run: slack-talkers
     spec:
+      imagePullSecrets:
+      - name: regcred
       containers:
       - name: slack-talkers
         image: ssanders0/slack-talkers:dockertag
