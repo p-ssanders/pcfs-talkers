@@ -110,9 +110,12 @@ jobs:
         - "pks-linux-amd64-1.4.*-*"
         - "kubectl-linux-amd64-1.13.*"
     - get: git-repository
+      passed:
+      - build
+    - get: docker-tag
       trigger: true
       passed:
-        - build
+      - build
   - task: get-pks-clis
     config:
       platform: linux
@@ -154,6 +157,7 @@ jobs:
       - name: pks
       - name: kubectl
       - name: git-repository
+      - name: docker-tag
       params:
         PKS_API_ENDPOINT: "https://api.pks.sandbox.fionathebluepittie.com"
         PKS_API_USERNAME: ((pks-api-username))
@@ -176,4 +180,5 @@ jobs:
 
           kubectl/kubectl config use-context cluster-1
           kubectl/kubectl cluster-info
-          kubectl/kubectl apply -f git-repository/k8s-manifest.yml
+
+          sed "s/dockertag/$(cat docker-tag/number)/g" git-repository/k8s-manifest.yml | kubectl/kubectl apply -f -
