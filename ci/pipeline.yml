@@ -27,7 +27,7 @@ resources:
   type: docker-image
   source:
     repository: ssanders0/slack-talkers
-    username: ssanders0
+    username: ((dockerhub-username))
     password: ((dockerhub-password))
 
 - name: pks-clis
