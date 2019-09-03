@@ -1,3 +1,11 @@
+---
+resource_types:
+  - name: pivnet
+    type: docker-image
+    source:
+      repository: pivotalcf/pivnet-resource
+      tag: latest-final
+
 resources:
 - name: git-repository
   type: git
@@ -24,6 +32,14 @@ resources:
     username: ssanders0
     password: ((dockerhub-password))
 
+- name: pks-clis
+  type: pivnet
+  source:
+    api_token: ((pivnet-api-token))
+    product_slug: pivotal-container-service
+    product_version: ^1\.4\.\d+$
+    sort_by: semver
+
 jobs:
 - name: test
   plan:
@@ -44,7 +60,6 @@ jobs:
         args:
         - "-c"
         - |
-          set -eux
           cd git-repository
           ./mvnw test
   - put: docker-tag
@@ -53,13 +68,14 @@ jobs:
 
 - name: build
   plan:
-  - get: git-repository
-    passed:
-    - test
-  - get: docker-tag
-    trigger: true
-    passed:
-    - test
+  - aggregate:
+    - get: git-repository
+      passed:
+      - test
+    - get: docker-tag
+      trigger: true
+      passed:
+      - test
   - task: package
     config:
       platform: linux
@@ -78,16 +94,88 @@ jobs:
         args:
         - "-c"
         - |
-          set -eux
           cd git-repository
           ./mvnw -DskipTests package
           cd ..
           cp -r git-repository/* workspace/
-
-          cat docker-tag/number
-
           cat docker-tag/number > workspace/Dockertag
   - put: docker-image
     params:
       build: workspace
       tag_file: workspace/Dockertag
+
+- name: deploy
+  plan:
+  - aggregate:
+    - get: pks-clis
+      params:
+        globs:
+        - "pks-linux-amd64-1.4.*-*"
+        - "kubectl-linux-amd64-1.13.*"
+    - get: git-repository
+      passed:
+        - build
+  - task: get-pks-clis
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: alpine
+          tag: latest
+      inputs:
+      - name: pks-clis
+      outputs:
+      - name: pks
+      - name: kubectl
+      run:
+        path: sh
+        args:
+        - "-c"
+        - |
+          cd pks-clis
+
+          cp pks-linux-amd64-1.4.* ./pks
+          chmod +x pks
+          ./pks --version
+          mv pks ../pks/
+
+          cp kubectl-linux-amd64-1.13.* ./kubectl
+          chmod +x kubectl
+          ./kubectl version --client
+          mv kubectl ../kubectl/
+  - task: deploy
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: alpine
+          tag: latest
+      inputs:
+      - name: pks
+      - name: kubectl
+      - name: git-repository
+      params:
+        PKS_API_ENDPOINT: "https://api.pks.sandbox.fionathebluepittie.com"
+        PKS_API_USERNAME: ((pks-api-username))
+        PKS_API_PASSWORD: ((pks-api-password))
+        PKS_API_CA_CERT: ((lets_encrypt_cert.ca))
+      run:
+        path: sh
+        args:
+        - "-c"
+        - |
+          pks/pks --version
+          pks/pks login \
+          -a "${PKS_API_ENDPOINT}" \
+          -u "${PKS_API_USERNAME}" \
+          -p "${PKS_API_PASSWORD}" \
+          --ca-cert "${PKS_API_CA_CERT}"
+
+          pks/pks cluster cluster-1
+          pks/pks get-credentials cluster-1
+
+          kubectl/kubectl config use-context cluster-1
+          kubectl/kubectl cluster-info
+          kubectl apply -f git-repository/k8s-manifest.yml
