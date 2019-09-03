@@ -13,8 +13,6 @@ resources:
     uri: git@github.com:p-ssanders/slack-talkers.git
     branch: master
     private_key: ((git-deploy-key.private_key))
-    ignore_paths:
-    - Dockertag
 
 - name: docker-tag
   type: semver
@@ -44,7 +42,6 @@ jobs:
 - name: test
   plan:
   - get: git-repository
-    trigger: true
   - task: test
     config:
       platform: linux
@@ -113,6 +110,7 @@ jobs:
         - "pks-linux-amd64-1.4.*-*"
         - "kubectl-linux-amd64-1.13.*"
     - get: git-repository
+      trigger: true
       passed:
         - build
   - task: get-pks-clis
@@ -178,4 +176,4 @@ jobs:
 
           kubectl/kubectl config use-context cluster-1
           kubectl/kubectl cluster-info
-          kubectl apply -f git-repository/k8s-manifest.yml
+          kubectl/kubectl apply -f git-repository/k8s-manifest.yml
